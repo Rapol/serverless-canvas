@@ -1,0 +1,44 @@
+service: canvas
+custom: ${file(./config.json)}
+
+provider:
+  name: aws
+  stage: dev
+  region: us-east-1
+  runtime: nodejs6.10
+  profile: serverless-admin
+  memorySize: 128
+  timeout: 5
+  versionFunctions: false
+  environment:
+    CASSANDRA_IP: ${self:custom.cassandra.CASSANDRA_IP}
+    CASSANDRA_USER: ${self:custom.cassandra.CASSANDRA_USER}
+    CASSANDRA_PASSWORD: ${self:custom.cassandra.CASSANDRA_PASSWORD}
+    CASSANDRA_KEYSPACE: ${self:custom.cassandra.CASSANDRA_KEYSPACE}
+    CASSANDRA_BOARD: ${self:custom.cassandra.CASSANDRA_BOARD}
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "iot:Publish"
+      Resource:
+        Fn::Join:
+          - ""
+          - - "arn:aws:iot:"
+            - ":${self:provider.region}:"
+            - Ref: 'AWS::AccountId'
+            - ":topic/canvas"
+    - Effect: "Allow"
+      Action:
+        - "iot:Connect"
+      Resource: "*"
+
+functions:
+  canvas:
+    handler: handler.handler
+    events:
+      - http:
+          path: canvas
+          method: get
+      - http:
+          path: canvas
+          method: put      
