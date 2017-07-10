@@ -7,7 +7,7 @@ const methods = {
   PUT: putCanvas
 }
 
-module.exports.handler = (event, context, cb) => {
+module.exports.canvas = (event, context, cb) => {
   const method = methods[event.httpMethod];
   if (!method) {
     const response = {
@@ -21,7 +21,7 @@ module.exports.handler = (event, context, cb) => {
 
 function getCanvas(event, context, cb) {
 
-  let client = db.createConnection();
+  const client = db.createConnection();
 
   client.connect()
     .then(function () {
@@ -48,7 +48,7 @@ function getCanvas(event, context, cb) {
 
 function putCanvas(event, context, cb) {
 
-  let body = valdiatePutCanvas(event.body);
+  const body = valdiatePutCanvas(event.body);
 
   if (!body) {
     const response = {

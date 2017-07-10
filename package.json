@@ -8,7 +8,5 @@
   },
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "cassandra-driver": "^3.2.2"
-  }
+  "dependencies": {}
 }

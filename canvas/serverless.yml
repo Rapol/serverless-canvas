@@ -1,5 +1,9 @@
 service: canvas
-custom: ${file(./config.json)}
+
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  region: ${opt:region, self:provider.region}
+  config: ${file(./config.json)}
 
 provider:
   name: aws
@@ -11,11 +15,11 @@ provider:
   timeout: 5
   versionFunctions: false
   environment:
-    CASSANDRA_IP: ${self:custom.cassandra.CASSANDRA_IP}
-    CASSANDRA_USER: ${self:custom.cassandra.CASSANDRA_USER}
-    CASSANDRA_PASSWORD: ${self:custom.cassandra.CASSANDRA_PASSWORD}
-    CASSANDRA_KEYSPACE: ${self:custom.cassandra.CASSANDRA_KEYSPACE}
-    CASSANDRA_BOARD: ${self:custom.cassandra.CASSANDRA_BOARD}
+    CASSANDRA_IP: ${self:custom.config.db.CASSANDRA_IP}
+    CASSANDRA_USER: ${self:custom.config.db.CASSANDRA_USER}
+    CASSANDRA_PASSWORD: ${self:custom.config.db.CASSANDRA_PASSWORD}
+    CASSANDRA_KEYSPACE: ${self:custom.config.db.CASSANDRA_KEYSPACE}
+    CASSANDRA_BOARD: ${self:custom.config.db.CASSANDRA_BOARD}
   iamRoleStatements:
     - Effect: "Allow"
       Action:
@@ -24,7 +28,7 @@ provider:
         Fn::Join:
           - ""
           - - "arn:aws:iot:"
-            - ":${self:provider.region}:"
+            - ":${self:custom.region}:"
             - Ref: 'AWS::AccountId'
             - ":topic/canvas"
     - Effect: "Allow"
@@ -34,7 +38,7 @@ provider:
 
 functions:
   canvas:
-    handler: handler.handler
+    handler: handler.canvas
     events:
       - http:
           path: canvas

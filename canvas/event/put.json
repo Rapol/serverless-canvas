@@ -1,0 +1,4 @@
+{
+  "httpMethod": "PUT",
+  "body": "{\r\n    \"x\": 1,\r\n    \"y\": 1,\r\n    \"color\": \"00F\",\r\n    \"user\": \"serverless@email.com\"\r\n  }"
+}
