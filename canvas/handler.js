@@ -85,15 +85,17 @@ function valdiatePutCanvas(body) {
   if (!body) {
     return;
   }
-  else {
-    try {
-      body = JSON.parse(body);
-      if (body && body.color && body.x && body.y && body.user)
-        return body;
-      else
-        return;
-    } catch (e) {
+  try {
+    body = JSON.parse(body);
+    if (body && body.color && body.x && body.y && body.user && checkRange(body.x, body.y))
+      return body;
+    else
       return;
-    }
+  } catch (e) {
+    return;
   }
+}
+
+function checkRange(x, y) {
+  return x >= 0 && x < process.env.BOARD_X_MAX && y >= 0 && y < process.env.BOARD_Y_MAX;
 }

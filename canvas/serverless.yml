@@ -39,6 +39,9 @@ provider:
 functions:
   canvas:
     handler: handler.canvas
+    environment:
+      BOARD_X_MAX: ${self:custom.config.constants.BOARD_X_MAX}
+      BOARD_Y_MAX: ${self:custom.config.constants.BOARD_Y_MAX}
     events:
       - http:
           path: canvas
