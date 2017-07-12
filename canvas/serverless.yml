@@ -23,17 +23,8 @@ provider:
   iamRoleStatements:
     - Effect: "Allow"
       Action:
-        - "iot:Publish"
-      Resource:
-        Fn::Join:
-          - ""
-          - - "arn:aws:iot:"
-            - ":${self:custom.region}:"
-            - Ref: 'AWS::AccountId'
-            - ":topic/canvas"
-    - Effect: "Allow"
-      Action:
         - "iot:Connect"
+        - "iot:Publish"
       Resource: "*"
 
 functions:
@@ -42,6 +33,7 @@ functions:
     environment:
       BOARD_X_MAX: ${self:custom.config.constants.BOARD_X_MAX}
       BOARD_Y_MAX: ${self:custom.config.constants.BOARD_Y_MAX}
+      IOT_ENDPOINT: ${self:custom.config.IOT_ENDPOINT}
     events:
       - http:
           path: canvas

@@ -1,6 +1,12 @@
 'use strict';
 
+const aws = require('aws-sdk');
+
 const db = require('./db.js');
+
+const iotdata = new aws.IotData({ endpoint: process.env.IOT_ENDPOINT});
+
+const CANVAS_TOPIC = "/canvas"
 
 const methods = {
   GET: getCanvas,
@@ -57,13 +63,23 @@ function putCanvas(event, context, cb) {
     return cb(response);
   }
 
-  let client = db.createConnection();
+  const client = db.createConnection();
 
   client.connect()
     .then(function () {
+      // Upsert pixel into board
       return client.execute(`INSERT INTO ${process.env.CASSANDRA_BOARD} (x,y,user,color,timestamp) VALUES (:x, :y, :user, :color, toTimestamp(now()))`, body, { prepare: true });
     })
-    .then(function (result) {
+    .then(function (result) {      
+      const message = {
+        x: body.x,
+        y: body.y,
+        color: body.color
+      }
+      // Notify all users about the updated pixel
+      return publishTopic(CANVAS_TOPIC, message);      
+    })
+    .then(() => {
       const response = {
         statusCode: 200,
       };
@@ -77,6 +93,7 @@ function putCanvas(event, context, cb) {
       return cb(response);
     })
     .then(() => {
+      // Tear down cassandra client after every lambda invocation
       return client.shutdown();
     })
 };
@@ -87,7 +104,7 @@ function valdiatePutCanvas(body) {
   }
   try {
     body = JSON.parse(body);
-    if (body && body.color && body.x && body.y && body.user && checkRange(body.x, body.y))
+    if (body && body.color && body.x && body.y && body.user && checkRange(body.x, body.y) && isHexColor(body.color))
       return body;
     else
       return;
@@ -96,6 +113,25 @@ function valdiatePutCanvas(body) {
   }
 }
 
+function isHexColor(color) {
+  return (typeof color === "string") && (color.length === 6)
+    && !isNaN(parseInt(color, 16));
+}
+
 function checkRange(x, y) {
   return x >= 0 && x < process.env.BOARD_X_MAX && y >= 0 && y < process.env.BOARD_Y_MAX;
+}
+
+function publishTopic(topic, message) {
+  return new Promise((resolve, reject) => {
+    const params = {
+      topic: topic,
+      payload: JSON.stringify(message),
+      qos: 0
+    };
+    iotdata.publish(params, function (err, data) {
+      // ignore any publish errors
+      resolve();
+    });
+  })
 }
