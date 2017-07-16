@@ -9,7 +9,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "aws-sdk": "^2.82.0",
     "cassandra-driver": "^3.2.2"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.85.0",
+    "mqtt": "^2.9.1"
   }
 }

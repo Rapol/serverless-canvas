@@ -43,3 +43,62 @@ functions:
           path: canvas
           method: put
           cors: true
+
+resources:
+  Resources:
+    CanvasPool:
+      Type: "AWS::Cognito::IdentityPool"
+      Properties:
+        IdentityPoolName: ${self:service}_${self:custom.stage}_users
+        AllowUnauthenticatedIdentities: true
+    CognitoUnauthenticatedRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Principal:
+              Federated: cognito-identity.amazonaws.com
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                cognito-identity.amazonaws.com:aud:
+                  Ref: CanvasPool
+              ForAnyValue:StringLike:
+                cognito-identity.amazonaws.com:amr: unauthenticated
+    UnauthenticatedCognitoPoolPolicy: 
+      Type: "AWS::IAM::Policy"
+      Properties: 
+        PolicyName: "${self:service}_${self:custom.stage}_unauthenticated_policy"
+        PolicyDocument: 
+          Version: "2012-10-17"
+          Statement: 
+            - Effect: Allow
+              Action:
+                - "iot:Connect"
+                - "iot:Receive"             
+              Resource: "*"
+            - Effect: Allow
+              Action:
+                - "iot:Subscribe"                
+              Resource:
+                - 'Fn::Join':
+                  - ':'
+                  -
+                    - 'arn:aws:iot'
+                    - ${self:custom.region}
+                    - Ref: 'AWS::AccountId'
+                    - 'topicfilter/canvas'
+        Roles: 
+          -  Ref: CognitoUnauthenticatedRole
+    PoolUnauthRoleAttachment:
+      Type: "AWS::Cognito::IdentityPoolRoleAttachment"
+      Properties:
+        IdentityPoolId: 
+          Ref: CanvasPool
+        Roles: 
+          unauthenticated:
+            Fn::GetAtt: 
+              - CognitoUnauthenticatedRole
+              - Arn
