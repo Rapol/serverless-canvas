@@ -4,13 +4,18 @@ const aws = require('aws-sdk');
 
 const db = require('./db.js');
 
-const iotdata = new aws.IotData({ endpoint: process.env.IOT_ENDPOINT});
+const iotdata = new aws.IotData({ endpoint: process.env.IOT_ENDPOINT });
 
 const CANVAS_TOPIC = "/canvas"
 
 const methods = {
   GET: getCanvas,
   PUT: putCanvas
+}
+
+const headers = {
+  "Access-Control-Allow-Origin" : "*", // Required for CORS support to work
+  "Access-Control-Allow-Credentials" : true // Required for cookies, authorization headers with HTTPS
 }
 
 module.exports.canvas = (event, context, cb) => {
@@ -36,6 +41,7 @@ function getCanvas(event, context, cb) {
     .then(function (result) {
       const response = {
         statusCode: 200,
+        headers,
         body: JSON.stringify(result.rows)
       };
       return cb(null, response);
@@ -43,7 +49,8 @@ function getCanvas(event, context, cb) {
     .catch(function (err) {
       console.log(err);
       const response = {
-        statusCode: 500
+        statusCode: 500,
+        error: JSON.stringify(err)
       };
       return cb(response);
     })
@@ -70,25 +77,27 @@ function putCanvas(event, context, cb) {
       // Upsert pixel into board
       return client.execute(`INSERT INTO ${process.env.CASSANDRA_BOARD} (x,y,user,color,timestamp) VALUES (:x, :y, :user, :color, toTimestamp(now()))`, body, { prepare: true });
     })
-    .then(function (result) {      
+    .then(function (result) {
       const message = {
         x: body.x,
         y: body.y,
         color: body.color
       }
       // Notify all users about the updated pixel
-      return publishTopic(CANVAS_TOPIC, message);      
+      return publishTopic(CANVAS_TOPIC, message);
     })
     .then(() => {
       const response = {
         statusCode: 200,
+        headers
       };
       return cb(null, response);
     })
     .catch(function (err) {
       console.log(err);
       const response = {
-        statusCode: 500
+        statusCode: 500,
+        error: JSON.stringify(err)
       };
       return cb(response);
     })
@@ -104,7 +113,7 @@ function valdiatePutCanvas(body) {
   }
   try {
     body = JSON.parse(body);
-    if (body && body.color && body.x && body.y && body.user && checkRange(body.x, body.y) && isHexColor(body.color))
+    if (body && body.color && body.user && checkRange(body.x, body.y) && isHexColor(body.color))
       return body;
     else
       return;
@@ -114,6 +123,10 @@ function valdiatePutCanvas(body) {
 }
 
 function isHexColor(color) {
+  if(!color && color[0] !== "#"){
+    return false;
+  }
+  color = color.slice(1);
   return (typeof color === "string") && (color.length === 6)
     && !isNaN(parseInt(color, 16));
 }

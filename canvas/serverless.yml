@@ -38,6 +38,8 @@ functions:
       - http:
           path: canvas
           method: get
+          cors: true
       - http:
           path: canvas
-          method: put      
+          method: put
+          cors: true
